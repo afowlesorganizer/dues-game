@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Union Dues Range Game</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background: #f5f7fa;
+    padding: 20px;
+}
+
+h1 {
+    color: #003366;
+    max-width: 700px;
+    margin: 0 auto 20px;
+}
+
+#game-container {
+    position: relative;
+    width: 220px;
+    height: 600px;
+    margin: 30px auto;
+    border: 4px solid #333;
+    background: white;
+    overflow: visible;
+}
+
+.tick {
+    position: absolute;
+    width: 100%;
+    border-top: 1px solid #ddd;
+}
+
+.label {
+    position: absolute;
+    left: -60px;
+    font-weight: bold;
+    color: #333;
+}
+
+#rangeBar {
+    position: absolute;
+    width: 100%;
+    background: rgba(0,120,212,.35);
+    border: 3px solid #0078d4;
+    box-sizing: border-box;
+}
+
+#answerLine {
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    background: red;
+    display: none;
+}
+
+#answerLabel {
+    position: absolute;
+    right: -65px;
+    color: red;
+    font-weight: bold;
+    display: none;
+}
+
+.controls {
+    margin-top: 20px;
+}
+
+button {
+    font-size: 24px;
+    font-weight: bold;
+    padding: 12px 30px;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    margin: 0 5px;
+}
+
+#stopBtn {
+    background: #0078d4;
+    color: white;
+}
+
+#stopBtn:hover:not(:disabled) {
+    background: #005ea6;
+}
+
+#restartBtn {
+    background: #28a745;
+    color: white;
+}
+
+#restartBtn:hover {
+    background: #1e7e34;
+}
+
+button:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+#result {
+    margin-top: 20px;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+#explanation {
+    max-width: 800px;
+    margin: 20px auto;
+    font-size: 18px;
+    line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<h1>
+About what percentage of your pay are your union dues?
+</h1>
+
+<div id="game-container">
+
+    <div id="answerLine"></div>
+    <div id="answerLabel">1.5%</div>
+
+    <div id="rangeBar"></div>
+
+</div>
+
+<div class="controls">
+    <button id="stopBtn">STOP</button>
+    <button id="restartBtn">PLAY AGAIN</button>
+</div>
+
+<div id="result"></div>
+<div id="explanation"></div>
+
+<script>
+const answer = 1.5;
+const rangeSize = 1.0;
+
+const container = document.getElementById("game-container");
+const rangeBar = document.getElementById("rangeBar");
+const answerLine = document.getElementById("answerLine");
+const answerLabel = document.getElementById("answerLabel");
+const result = document.getElementById("result");
+const explanation = document.getElementById("explanation");
+const stopBtn = document.getElementById("stopBtn");
+const restartBtn = document.getElementById("restartBtn");
+
+let position = 0;
+let direction = 1;
+let interval;
+
+// Draw scale from 0% to 10%
+for (let value = 0; value <= 10; value++) {
+
+    const y = (value / 10) * container.clientHeight;
+
+    const tick = document.createElement("div");
+    tick.className = "tick";
+    tick.style.bottom = y + "px";
+
+    const label = document.createElement("div");
+    label.className = "label";
+    label.style.bottom = (y - 10) + "px";
+    label.textContent = value + "%";
+
+    container.appendChild(tick);
+    container.appendChild(label);
+}
+
+function valueToPixels(value) {
+    return (value / 10) * container.clientHeight;
+}
+
+const barHeight = valueToPixels(rangeSize);
+rangeBar.style.height = barHeight + "px";
+
+function startGame() {
+
+    clearInterval(interval);
+
+    // Random starting location
+    position = Math.random() * 8;
+    direction = Math.random() < 0.5 ? 1 : -1;
+
+    result.textContent = "";
+    explanation.innerHTML = "";
+
+    answerLine.style.display = "none";
+    answerLabel.style.display = "none";
+
+    stopBtn.disabled = false;
+    stopBtn.textContent = "STOP";
+
+    rangeBar.style.bottom = valueToPixels(position) + "px";
+
+    interval = setInterval(() => {
+
+        position += direction * 0.03;
+
+        if (position >= 9) {
+            position = 9;
+            direction = -1;
+        }
+
+        if (position <= 0) {
+            position = 0;
+            direction = 1;
+        }
+
+        rangeBar.style.bottom =
+            valueToPixels(position) + "px";
+
+    }, 15);
+}
+
+function stopGame() {
+
+    clearInterval(interval);
+
+    const low = position;
+    const high = position + rangeSize;
+
+    const answerPos = valueToPixels(answer);
+
+    answerLine.style.display = "block";
+    answerLabel.style.display = "block";
+
+    answerLine.style.bottom = answerPos + "px";
+    answerLabel.style.bottom = (answerPos - 10) + "px";
+
+    if (answer >= low && answer <= high) {
+
+        result.style.color = "green";
+        result.textContent =
+            "✅ Correct! The answer is inside your range.";
+
+    } else {
+
+        result.style.color = "crimson";
+        result.textContent =
+            "❌ Not quite!";
+    }
+
+    explanation.innerHTML = `
+        <strong>Your Range:</strong>
+        ${low.toFixed(2)}% to ${high.toFixed(2)}%
+        <br><br>
+
+        <strong>Actual Answer:</strong>
+        1.5%
+        <br><br>
+
+        Many educators overestimate the cost of union membership.
+        Union dues are typically about 1.5% of pay, while collective
+        bargaining often returns many times that amount through higher
+        wages, improved benefits, stronger job protections, and better
+        working conditions.
+    `;
+
+    stopBtn.disabled = true;
+}
+
+stopBtn.addEventListener("click", stopGame);
+restartBtn.addEventListener("click", startGame);
+
+// Start first game
+startGame();
+</script>
+
+</body>
+</html>
